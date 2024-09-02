@@ -1,0 +1,6 @@
+worktrees
+venv
+.idea
+.DS_Store
+.envvars
+*.env
