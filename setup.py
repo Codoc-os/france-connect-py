@@ -11,10 +11,6 @@ CLASSIFIERS = [
     'License :: OSI Approved :: Apache Software License',
     'Natural Language :: English',
     'Development Status :: 4 - Beta',
-    'Framework :: Django',
-    'Framework :: Django :: 4.0',
-    'Framework :: Django :: 4.1',
-    'Framework :: Django :: 4.2',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
@@ -29,15 +25,15 @@ LONG_DESCRIPTION = (
     + codecs.open(os.path.join(DIRNAME, 'CHANGELOG.md'), encoding='utf-8').read()
 )
 REQUIREMENTS = [
-    'req1>=x.y.z, <x+1.0.0',
-    'req1>=x.y.z, <x+1.0.0',
+    'pyjwt[crypto]>=2.9.0,<3.0.0',
+    'requests>=2.32.3,<3.0.0',
 ]
 
 setup(
     name='france-connect-py',
     version='0.1.0',
     description="A Python client for FranceConnect",
-    long_description="LONG_DESCRIPTION",
+    long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     author='Codoc',
     author_email='support@codoc.co',
@@ -45,6 +41,7 @@ setup(
     packages=['france-connect-py'],
     include_package_data=True,
     install_requires=REQUIREMENTS,
+    license='Apache License 2.0',
     keywords='france-connect france-connect-py',
     classifiers=CLASSIFIERS,
 )

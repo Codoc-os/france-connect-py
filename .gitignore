@@ -1,6 +1,17 @@
 worktrees
+# Environments
 venv
-.idea
-.DS_Store
 .envvars
 *.env
+env/
+venv/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Editor directories and files
+# Visual Studio
+.vscode
+# JetBrains IDEs
+.idea

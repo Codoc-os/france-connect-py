@@ -1,0 +1,10 @@
+bandit
+black
+mypy
+mypy-extensions
+pydocstyle
+flake8
+isort
+pytest
+tox
+pytest-mock
