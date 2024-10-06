@@ -8,16 +8,14 @@ from setuptools import setup
 DIRNAME = os.path.dirname(__file__)
 CLASSIFIERS = [
     'Intended Audience :: Developers',
-    'License :: OSI Approved :: Apache Software License',
     'Natural Language :: English',
     'Development Status :: 4 - Beta',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
 ]
 LONG_DESCRIPTION = (
     codecs.open(os.path.join(DIRNAME, 'README.md'), encoding='utf-8').read()
@@ -31,8 +29,8 @@ REQUIREMENTS = [
 
 setup(
     name='france-connect-py',
-    version='0.1.0',
-    description="A Python client for FranceConnect",
+    version='2.0.0',
+    description="A Python client to handle communication with FranceConnect",
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     author='Codoc',
@@ -41,7 +39,7 @@ setup(
     packages=['france-connect-py'],
     include_package_data=True,
     install_requires=REQUIREMENTS,
-    license='Apache License 2.0',
+    license='MIT License',
     keywords='france-connect france-connect-py',
     classifiers=CLASSIFIERS,
 )

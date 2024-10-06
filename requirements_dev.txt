@@ -6,5 +6,7 @@ pydocstyle
 flake8
 isort
 pytest
-tox
+pytest-cov
 pytest-mock
+types-requests
+tox

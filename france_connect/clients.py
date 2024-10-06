@@ -1,6 +1,6 @@
 import secrets
 import urllib.parse
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import jwt
 import requests
@@ -48,7 +48,7 @@ class FranceConnect:
         scopes: List[Scopes],
         login_callback_url: str,
         logout_callback_url: str,
-        fc_base_url: str = "https://fcp-low.integ01.dev-franceconnect.fr",
+        fc_base_url: str,
         fc_authorization_url: str = "/api/v2/authorize",
         fc_token_url: str = "/api/v2/token",
         fc_jwks_url: str = "/api/v2/jwks",
@@ -84,7 +84,7 @@ class FranceConnect:
         return secrets.token_hex(64)
 
     def get_authentication_url(
-        self, acr_values: List[ACRValues] = None, nonce: str = None, state: str = None, redirect_url: str = None
+        self, acr_values: List[ACRValues] = None, nonce: str = None, state: str = None, callback_url: str = None
     ) -> Tuple[str, str, str]:
         """Return the authentication URL, nonce, and state.
 
@@ -99,6 +99,9 @@ class FranceConnect:
         state: str, optional
             The `state` used for the authentication process, generated using
             `generate_state()` if not provided.
+        callback_url: str, optional
+            The callback URL used by FranceConnect after successful
+            authentication, defaults to `self.login_callback_url`.
 
         Returns
         -------
@@ -108,7 +111,7 @@ class FranceConnect:
         acr_values = acr_values or [ACRValues.EIDAS1]
         nonce = nonce or self.generate_nonce()
         state = state or self.generate_state()
-        redirect_url = redirect_url or self.login_callback_url
+        redirect_url = callback_url or self.login_callback_url
         params = urllib.parse.urlencode(
             {
                 "client_id": self.client_id,
@@ -130,24 +133,16 @@ class FranceConnect:
         response.raise_for_status()
         return response.json()
 
-    def _verify_jwt(self, token: str, token_type=str) -> dict:
-        """Verify the JWT signature and returns decoded token."""
+    def verify_jwt(self, token: str) -> dict:
+        """Verify and decode the give token."""
         jwks_client = PyJWKClient(urllib.parse.urljoin(self.fc_base_url, self.fc_jwks_url))
         # Get the signing key from the JWT
         key = jwks_client.get_signing_key_from_jwt(token)
         # Decode and verify the JWT with the signing key
         return jwt.decode(token, key.key, algorithms=["RS256"], audience=self.client_id)
 
-    def verify_access_token(self, access_token: str) -> dict:
-        """Verify the `access_token`."""
-        return self._verify_jwt(access_token, "access_token")
-
-    def verify_user_info(self, id_token: str) -> bool:
-        """Verify the user info (id_token) signature."""
-        return self._verify_jwt(id_token, "id_token")
-
-    def get_access_token(self, code: str) -> Tuple[dict, dict]:
-        """Exchange the authorization code for an access token.
+    def get_id_token(self, code: str) -> Tuple[dict, dict]:
+        """Exchange the authorization code for an ID Token.
 
         Parameters
         ----------
@@ -157,7 +152,7 @@ class FranceConnect:
         Returns
         -------
         Tuple[dict, dict]
-            Json containing information token and the verified decoded token.
+            The raw token and verified token.
         """
         token_url = urllib.parse.urljoin(self.fc_base_url, self.fc_token_url)
         data = {
@@ -177,7 +172,7 @@ class FranceConnect:
         )
         response.raise_for_status()
         token = response.json()
-        return token, self.verify_access_token(token.get("id_token"))
+        return token, self.verify_jwt(token.get("id_token"))
 
     def get_user_info(self, token: str) -> dict:
         """Retrieve user information using `token`."""
@@ -187,9 +182,9 @@ class FranceConnect:
             url, headers=headers, timeout=self.timeout, verify=self.verify_ssl, allow_redirects=self.allow_redirects
         )
         response.raise_for_status()
-        return self.verify_access_token(response.content.decode("utf-8"))
+        return self.verify_jwt(response.content.decode("utf-8"))
 
-    def get_logout_url(self, id_token: str, state: str, logout_url: str = None, logout_url_params: dict = None) -> str:
+    def get_logout_url(self, id_token: str, state: str, callback_url: str = None) -> str:
         """Compute the logout URL for FranceConnect.
 
         Parameters
@@ -198,10 +193,11 @@ class FranceConnect:
             The id token to use for the logout.
         state: str
             The state to use for the logout.
-        logout_url: str, optional
-            The URL to redirect to after successful logout, defaults to `logout_callback_url`.
+        callback_url: str, optional
+            The callback URL used by FranceConnect after successful
+            logout, defaults to `self.logout_callback_url`.
         """
-        logout_url = logout_url or self.logout_callback_url
+        logout_url = callback_url or self.logout_callback_url
 
         parameters = urllib.parse.urlencode(
             {"id_token_hint": id_token, "state": state, "post_logout_redirect_uri": logout_url}
