@@ -4,14 +4,63 @@ import urllib.parse
 from unittest.mock import MagicMock, patch
 
 import jwt
-import pytest
 
-from .fixtures import france_connect_client
+from france_connect.enums import ACRValues
+
+from .conftest import (
+    TEST_CLIENT_FC_BASE_URL,
+    TEST_CLIENT_ID,
+    TEST_CLIENT_LOGIN_CALLBACK_URL,
+    TEST_CLIENT_SCOPES,
+    france_connect_client,
+)
 
 
-def test_get_access_token_and_verify(france_connect_client):
+def test_authentication_url_defaults_args(france_connect_client):
+    authentication_url, nonce, state = france_connect_client.get_authentication_url()
+    parsed_url = urllib.parse.urlparse(authentication_url)
+    query_params = urllib.parse.parse_qs(parsed_url.query)
+    assert f"{parsed_url.scheme}://{parsed_url.hostname}" == TEST_CLIENT_FC_BASE_URL
+    assert parsed_url.path == "/api/v2/authorize"
+    assert query_params["client_id"] == [TEST_CLIENT_ID]
+    assert query_params["response_type"] == ["code"]
+    assert query_params["scope"] == [" ".join(TEST_CLIENT_SCOPES)]
+    assert query_params["acr_values"] == [ACRValues.EIDAS1]
+    assert query_params["nonce"] == [nonce]
+    assert query_params["state"] == [state]
+    assert query_params["redirect_uri"] == [TEST_CLIENT_LOGIN_CALLBACK_URL]
+
+
+def test_authentication_url_custom_args(france_connect_client):
+    acr_values = [ACRValues.EIDAS2, ACRValues.EIDAS3]
+    callback_url = "http://dummy_callback/login"
+    authentication_url, nonce, state = france_connect_client.get_authentication_url(
+        acr_values=acr_values, nonce="1234567890abcdef", state="1234567890abcdef", callback_url=callback_url
+    )
+    parsed_url = urllib.parse.urlparse(authentication_url)
+    query_params = urllib.parse.parse_qs(parsed_url.query)
+    assert f"{parsed_url.scheme}://{parsed_url.hostname}" == TEST_CLIENT_FC_BASE_URL
+    assert parsed_url.path == "/api/v2/authorize"
+    assert query_params["client_id"] == [TEST_CLIENT_ID]
+    assert query_params["response_type"] == ["code"]
+    assert query_params["scope"] == [" ".join(TEST_CLIENT_SCOPES)]
+    assert query_params["acr_values"] == [" ".join(acr_values)]
+    assert query_params["nonce"] == [nonce]
+    assert query_params["state"] == [state]
+    assert query_params["redirect_uri"] == [callback_url]
+
+
+def test_configuration(france_connect_client):
+    with patch("requests.get") as mock:
+        mock.return_value.json.return_value = {"key": "value"}
+        mock.return_value.status_code = 200
+
+        configuration = france_connect_client.get_configuration()
+        assert configuration == {"key": "value"}
+
+
+def test_get_id_token_and_verify(france_connect_client):
     mock_code = secrets.token_urlsafe(8)
-    access_token = secrets.token_urlsafe(32)
     id_token = secrets.token_urlsafe(16)
     nonce = secrets.token_urlsafe(16)
 
@@ -30,7 +79,6 @@ def test_get_access_token_and_verify(france_connect_client):
 
     with patch("requests.post") as mock_post:
         mock_post.return_value.json.return_value = {
-            "access_token": access_token,
             "id_token": id_token,
             "expires_in": 3600,
             "token_type": "Bearer",
@@ -46,9 +94,8 @@ def test_get_access_token_and_verify(france_connect_client):
             with patch("france_connect.clients.jwt.decode") as mock_decode:
                 mock_decode.return_value = decoded_token_expected
 
-                token, decoded_token = france_connect_client.get_access_token(mock_code)
+                token, decoded_token = france_connect_client.get_id_token(mock_code)
 
-    assert token["access_token"] == access_token
     assert token["id_token"] == id_token
 
     assert decoded_token["sub"] == decoded_token_expected["sub"]
@@ -72,7 +119,7 @@ def test_get_user_info_and_verify(france_connect_client):
         headers={"kid": "kid_key"},
     )
 
-    access_token = "dummy_access_token"
+    id_token = "dummy_id_token"
 
     decoded_user_info_expected = {
         "sub": "1234567890",
@@ -93,7 +140,7 @@ def test_get_user_info_and_verify(france_connect_client):
             with patch("france_connect.clients.jwt.decode") as mock_user_info_decode:
                 mock_user_info_decode.return_value = decoded_user_info_expected
 
-                user_info = france_connect_client.get_user_info(access_token)
+                user_info = france_connect_client.get_user_info(id_token)
 
     assert user_info["sub"] == decoded_user_info_expected["sub"]
     assert user_info["given_name"] == decoded_user_info_expected["given_name"]

@@ -1,66 +1,91 @@
-# france-connect-py
+France Connect Py
+=====================
 
-**france-connect-py** is a Python client for integrating with the [FranceConnect](https://franceconnect.gouv.fr) authentication system, allowing secure and efficient authentication for users of FranceConnect services.
+[![PyPI Version](https://badge.fury.io/py/france-connect-py.svg)](https://badge.fury.io/py/france-connect-py)
+[![Tests](https://github.com/Codoc-os/france-connect-py/workflows/Tests/badge.svg)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-brightgreen.svg)](#)
+[![License MIT](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/Codoc-os/france-connect-py/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/Codoc-os/france-connect-py/branch/main/graph/badge.svg)](https://codecov.io/gh/Codoc-os/france-connect-py)
+[![CodeFactor](https://www.codefactor.io/repository/github/Codoc-os/france-connect-py/badge)](https://www.codefactor.io/repository/github/Codoc-os/france-connect-py)
+
+`france-connect-py` is a package allowing to interact with the France Connect API through a single and easy-to-use class.
 
 ## Requirements
 
-* `python >= 3.9`
-* `pip => 22.3.0`
+`france-connect-py` only support the supported version of each dependency (mainstream & lts).
 
+* `Python` ([supported versions](https://devguide.python.org/versions/))
 
-## Installation
+## Installation 
 
-1. Clone the repository.
+The easiest way to install `france-connect-py` is through `pip`:
 
-    ```shell
-    git clone git@github.com:Codoc-os/france-connect-py.git
-    ```
+* `pip install france-connect-py`
 
-2. Create a python virtual environment (*venv*).
+## How to use
 
-    ```shell
-    python3 -m venv {env_name}
-    ```
+You only need to import the `FranceConnect` class and create an instance to
+start using the France Connect API.
 
-3. Activate the created *venv*:
-
-    ```shell
-    source {env_name}/bin/activate
-    ```
-
-4. Install python's requirements : `pip install -r requirements.txt`
-
-## Usage
-
-Install package : `pip install france_connect`
-
-## Example
-
-For more information on the FranceConnect API, see the [FranceConnect API documentation](https://docs.partenaires.franceconnect.gouv.fr/fs/).
-    
 ```python
-from france_connect import FranceConnect, Scopes, ACRValues
+from france_connect.clients import FranceConnect
+from france_connect.scopes import ACRValues, Scopes
 
-fc_client = FranceConnect(
-        client_id='client-id',
-        client_secret='client-secret',
-        scopes=[Scopes.OPENID, Scopes.PROFILE],
-        login_callback_url='https://your-app.com/callback',
-        logout_callback_url='https://your-app.com/logout',
+fc = FranceConnect(
+    client_id="<client_id>",
+    client_secret="<client_secret>",
+    scopes=[Scopes.PROFILE, Scopes.IDENTITE_PIVOT],
+    login_callback_url="<login_callback_url>",
+    logout_callback_url="<logout_callback_url>",
+    fc_base_url="https://fcp-low.integ01.dev-franceconnect.fr",
 )
-# Get authentication URL
-auth_url, nonce, state = fc_client.get_authentication_url()
-print(f"Navigate to: {auth_url}")
 
-# After receiving the authorization code, exchange it for an access token, it verifies signature and returns decoded token
-token_not_verified, decoded_token = fc_client.get_access_token('authorization-code')
-print(token_not_verified)
-print(decoded_token)
+# You can retrieve the FranceConnect's OpenID configuration as follow.
+fc.get_configuration()
 
-# Get user info
-user_info = fc_client.get_user_info('access-token')
+# Get the authorization URL.
+#
+# You can provide a specific `nonce` and `state` if needed, or let the class
+# generate them as a random 64 bytes hex string. You can also inherit
+# `FranceConnect` and override `generate_nonce()` and `generate_state()` to change
+# the way they are generated.
+# 
+# `eidas1` is used as the default level of end user assurance, you can provide
+# a different value using the `acr_values` parameter.
+# For more information, see:
+#   https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-eidas-acr/
+# 
+# The `login_callback_url` provided at instantiation will be used as the
+# callback URL, you can override it using the `callback_url` parameter.
+url, nonce, state = fc.get_authorization_url(acr_values=[ACRValues.EIDAS2])
 
-# Get logout URL
-logout_url = fc_client.get_logout_url(id_token, state, url) # url default to logout_callback_url
-print(f"Navigate to: {logout_url}")
+
+# The following code must be called when the user is redirected back to the
+# service provider after a successful authentication of FranceConnect.
+#
+# Retrieve the code from the FranceConnect request
+code = ...
+# Retrieve the ID Token (the signature is verified automatically)
+raw_token, decoded_token = fc.get_id_token(code)
+# Retrieve the user's information using the ID Token (the signature is also
+# verified automatically) `user_info` is a dictionary containing the user's
+# information asked in the scopes.
+user_info = fc.get_user_info(decoded_token["id_token"])
+
+
+# To retrieve the logout url, uses `get_logout_url()`.
+#
+# The `logout_callback_url` provided at instantiation will be used as the
+# callback URL, you can override it using the `callback_url` parameter.
+logout_url = fc.get_logout_url(decoded_token["id_token"], state)
 ```
+
+## Other
+
+`france-connect-py` uses the `requests` library to interact with the France
+Connect API. You can override how the library is used using the following
+`FranceConnect` class parameters:
+
+* `timeout: int = 10`
+* `verify_ssl: bool = True`
+* `allow_redirects: bool = True`

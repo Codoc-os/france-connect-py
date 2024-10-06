@@ -4,7 +4,7 @@ from enum import Enum
 class EnumBase(str, Enum):
     """Define the base class for the enums."""
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.value)
 
 
@@ -45,7 +45,7 @@ class ACRValues(EnumBase):
     Define the ACR values for the France Connect API.
 
     For information about the ACR values, see the official documentation:
-    https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-eidas-acr/#specifier-un-niveau-de-garantie-eidas-souhaite
+    https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-eidas-acr/
     """
 
     EIDAS1 = "eidas1"

@@ -9,7 +9,7 @@ EXIT_CODE=0
 #                                   ISORT                                      #
 ################################################################################
 echo -n "${Cyan}Formatting import with isort... $Color_Off"
-out=$(isort france_connect/)
+out=$(isort france_connect/ tests/)
 if [ ! -z "$out" ] ; then
   echo ""
   echo -e "$out"
@@ -21,7 +21,7 @@ echo ""
 #                                   BLACK                                      #
 ################################################################################
 echo "${Cyan}Formatting code with black...$Color_Off"
-black -l 120 france_connect/
+black -l 120 france_connect/ tests/
 echo ""
 
 
@@ -29,7 +29,7 @@ echo ""
 #                                PYCODESTYLE                                   #
 ################################################################################
 echo -n "${Cyan}Running pycodestyle... $Color_Off"
-out=$(pycodestyle france_connect/)
+out=$(pycodestyle france_connect/ tests/)
 if [ "$?" -ne 0 ] ; then
   echo "${Red}Error !$Color_Off"
   echo -e "$out"
@@ -45,6 +45,21 @@ echo ""
 ################################################################################
 echo -n "${Cyan}Running pydocstyle... $Color_Off"
 out=$(pydocstyle --count france_connect/)
+if [ "$?" -ne 0 ] ; then
+  echo "${Red}Error !$Color_Off"
+  echo -e "$out"
+  EXIT_CODE=1
+else
+  echo "${Green}Ok ✅ $Color_Off"
+fi
+echo ""
+
+
+################################################################################
+#                                   MYPY                                       #
+################################################################################
+echo -n "${Cyan}Running mypy... $Color_Off"
+out=$(mypy france_connect/ --disallow-untyped-def)
 if [ "$?" -ne 0 ] ; then
   echo "${Red}Error !$Color_Off"
   echo -e "$out"
