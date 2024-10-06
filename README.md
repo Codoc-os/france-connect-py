@@ -2,7 +2,7 @@ France Connect Py
 =====================
 
 [![PyPI Version](https://badge.fury.io/py/france-connect-py.svg)](https://badge.fury.io/py/france-connect-py)
-[![Tests](https://github.com/Codoc-os/france-connect-py/workflows/Tests/badge.svg)
+![Tests](https://github.com/Codoc-os/france-connect-py/workflows/Tests/badge.svg)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-brightgreen.svg)](#)
 [![License MIT](https://img.shields.io/badge/license-MIT-brightgreen.svg)](https://github.com/Codoc-os/france-connect-py/blob/main/LICENSE)
 [![codecov](https://codecov.io/gh/Codoc-os/france-connect-py/branch/main/graph/badge.svg)](https://codecov.io/gh/Codoc-os/france-connect-py)
