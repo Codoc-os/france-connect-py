@@ -8,7 +8,8 @@ France Connect Py
 [![codecov](https://codecov.io/gh/Codoc-os/france-connect-py/branch/main/graph/badge.svg)](https://codecov.io/gh/Codoc-os/france-connect-py)
 [![CodeFactor](https://www.codefactor.io/repository/github/Codoc-os/france-connect-py/badge)](https://www.codefactor.io/repository/github/Codoc-os/france-connect-py)
 
-`france-connect-py` is a package allowing to interact with the France Connect API through a single and easy-to-use class.
+`france-connect-py` is a package allowing to interact with FranceConnect V2
+through a single and easy-to-use class.
 
 ## Requirements
 

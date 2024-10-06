@@ -137,6 +137,7 @@ jobs:
       - name: Install Tox and any other packages
         run: |
           pip install tox
+
       - name: Python ${{ matrix.python-version }}
         run: tox -e py
 
@@ -163,6 +164,10 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: '3.12'
+
+      - name: Install setuptools
+        run: |
+          pip install setuptools
 
       - name: Creating Built Distributions
         run: python setup.py sdist

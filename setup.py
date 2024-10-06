@@ -36,7 +36,7 @@ setup(
     author='Codoc',
     author_email='support@codoc.co',
     url='https://github.com/Codoc-os/france-connect-py',
-    packages=['france-connect-py'],
+    packages=['france_connect'],
     include_package_data=True,
     install_requires=REQUIREMENTS,
     license='MIT License',
