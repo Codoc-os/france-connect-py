@@ -1,0 +1,173 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+      - '*.*.*'
+
+  pull_request:
+    branches:
+      - master
+      - '*.*.*'
+
+  release:
+    types: [ published ]
+
+jobs:
+
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Black
+        run: |
+          black --check -l 120 france_connect/ tests/
+
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Isort
+        run: |
+          isort --check france_connect/ tests/
+
+  pycodestyle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Pycodestyle
+        run: |
+          pycodestyle france_connect/ tests/
+
+  pydocstyle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Pydocstyle
+        run: |
+          pydocstyle --count france_connect/
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Mypy
+        run: |
+          mypy france_connect/ --disallow-untyped-def
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Bandit
+        run: |
+          bandit --ini=setup.cfg -ll 2> /dev/null
+
+
+  test:
+    needs: [black, isort, pycodestyle, pydocstyle, mypy, bandit]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ 3.9, '3.10', '3.11', '3.12' ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Tox and any other packages
+        run: |
+          pip install tox
+      - name: Python ${{ matrix.python-version }}
+        run: tox -e py
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage.xml
+
+  publish:
+    needs: test
+    if: github.event_name == 'release' && github.event.action == 'published'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: pypi
+      url: https://pypi.org/p/france-connect-py
+    permissions:
+        id-token: write
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.12'
+
+      - name: Creating Built Distributions
+        run: python setup.py sdist
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip_existing: true
