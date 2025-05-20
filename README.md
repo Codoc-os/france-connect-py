@@ -36,6 +36,9 @@ fc = FranceConnect(
     client_id="<client_id>",
     client_secret="<client_secret>",
     scopes=[Scopes.PROFILE, Scopes.IDENTITE_PIVOT],
+    # Must be THE SAME url as defined in FranceConnect
+    # No additional query params
+    # Do not forget the potential trailing slash
     login_callback_url="<login_callback_url>",
     logout_callback_url="<logout_callback_url>",
     fc_base_url="https://fcp-low.integ01.dev-franceconnect.fr",
@@ -58,7 +61,7 @@ fc.get_configuration()
 # 
 # The `login_callback_url` provided at instantiation will be used as the
 # callback URL, you can override it using the `callback_url` parameter.
-url, nonce, state = fc.get_authorization_url(acr_values=[ACRValues.EIDAS2])
+url, nonce, state = fc.get_authentication_url(acr_values=[ACRValues.EIDAS2])
 
 
 # The following code must be called when the user is redirected back to the
@@ -66,19 +69,23 @@ url, nonce, state = fc.get_authorization_url(acr_values=[ACRValues.EIDAS2])
 #
 # Retrieve the code from the FranceConnect request
 code = ...
+
+
 # Retrieve the ID Token (the signature is verified automatically)
 raw_token, decoded_token = fc.get_id_token(code)
+
+
 # Retrieve the user's information using the ID Token (the signature is also
 # verified automatically) `user_info` is a dictionary containing the user's
 # information asked in the scopes.
-user_info = fc.get_user_info(decoded_token["id_token"])
+user_info = fc.get_user_info(raw_token["access_token"])
 
 
 # To retrieve the logout url, uses `get_logout_url()`.
 #
 # The `logout_callback_url` provided at instantiation will be used as the
 # callback URL, you can override it using the `callback_url` parameter.
-logout_url = fc.get_logout_url(decoded_token["id_token"], state)
+logout_url = fc.get_logout_url(raw_token["id_token"], state)
 ```
 
 ## Other

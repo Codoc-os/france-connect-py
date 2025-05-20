@@ -57,6 +57,7 @@ class FranceConnect:
         timeout: int = 10,
         verify_ssl: bool = True,
         allow_redirects: bool = True,
+        jwt_algorithms: List[str] = None,
     ):
         self.client_id = client_id
         self.client_secret = client_secret
@@ -72,6 +73,7 @@ class FranceConnect:
         self.timeout = timeout
         self.verify_ssl = verify_ssl
         self.allow_redirects = allow_redirects
+        self.jwt_algorithms = jwt_algorithms or ["RS256", "ES256"]
 
     @staticmethod
     def generate_nonce() -> str:
@@ -139,7 +141,7 @@ class FranceConnect:
         # Get the signing key from the JWT
         key = jwks_client.get_signing_key_from_jwt(token)
         # Decode and verify the JWT with the signing key
-        return jwt.decode(token, key.key, algorithms=["RS256"], audience=self.client_id)
+        return jwt.decode(token, key.key, algorithms=self.jwt_algorithms, audience=self.client_id)
 
     def get_id_token(self, code: str) -> Tuple[dict, dict]:
         """Exchange the authorization code for an ID Token.
