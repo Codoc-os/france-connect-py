@@ -1,6 +1,7 @@
 import secrets
+import ssl
 import urllib.parse
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import jwt
 import requests
@@ -137,7 +138,13 @@ class FranceConnect:
 
     def verify_jwt(self, token: str) -> dict:
         """Verify and decode the give token."""
-        jwks_client = PyJWKClient(urllib.parse.urljoin(self.fc_base_url, self.fc_jwks_url))
+        jwks_url = urllib.parse.urljoin(self.fc_base_url, self.fc_jwks_url)
+        if not self.verify_ssl:
+            ssl_context = ssl._create_unverified_context()  # nosec: B323  # sandbox/debug only
+            jwks_client = PyJWKClient(jwks_url, ssl_context=ssl_context)
+        else:
+            jwks_client = PyJWKClient(jwks_url)
+
         # Get the signing key from the JWT
         key = jwks_client.get_signing_key_from_jwt(token)
         # Decode and verify the JWT with the signing key

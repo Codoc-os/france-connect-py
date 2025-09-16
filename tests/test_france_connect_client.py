@@ -104,6 +104,53 @@ def test_get_id_token_and_verify(france_connect_client):
     assert decoded_token["iss"] == decoded_token_expected["iss"]
 
 
+def test_verify_jwt_with_verify_ssl_disabled(france_connect_client):
+    france_connect_client.verify_ssl = False  # Force verify_ssl to False
+    mock_code = secrets.token_urlsafe(8)
+    id_token = secrets.token_urlsafe(16)
+    nonce = secrets.token_urlsafe(16)
+
+    decoded_token_expected = {
+        "sub": "sub",
+        "auth_time": 1727813371,
+        "acr": "eidas1",
+        "nonce": nonce,
+        "at_hash": "at_hash",
+        "aud": "aud",
+        "exp": 1727813431,
+        "iat": 1727813371,
+        "iss": "https://fcp-low.integ01.dev-franceconnect.fr/api/v2",
+    }
+
+    with patch("requests.post") as mock_post:
+        mock_post.return_value.json.return_value = {
+            "id_token": id_token,
+            "expires_in": 3600,
+            "token_type": "Bearer",
+        }
+        mock_post.return_value.status_code = 200
+
+        with patch("france_connect.clients.PyJWKClient") as mock_jwks_client:
+            mock_jwks_client.return_value.get_signing_key_from_jwt.return_value = MagicMock(key="public_key")
+
+            # jwt.decode mocked for decoding the id_token
+            with patch("france_connect.clients.jwt.decode") as mock_decode:
+                mock_decode.return_value = decoded_token_expected
+
+                token, decoded_token = france_connect_client.get_id_token(mock_code)
+
+    assert token["id_token"] == id_token
+    assert decoded_token["sub"] == decoded_token_expected["sub"]
+    assert decoded_token["nonce"] == decoded_token_expected["nonce"]
+    assert decoded_token["acr"] == decoded_token_expected["acr"]
+    assert decoded_token["iss"] == decoded_token_expected["iss"]
+
+    # Verify that PyJWKClient was called with a relaxed ssl_context
+    mock_jwks_client.assert_called_once()
+    _, kwargs = mock_jwks_client.call_args
+    assert kwargs["ssl_context"] is not None  # Ensure ssl_context is provided
+
+
 def test_get_user_info_and_verify(france_connect_client):
     # Simulates a real encoded user info response
     encoded_user_info = jwt.encode(
