@@ -29,7 +29,7 @@ REQUIREMENTS = [
 
 setup(
     name='france-connect-py',
-    version='2.1.0',
+    version='2.1.1',
     description="A Python client to handle communication with FranceConnect",
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
